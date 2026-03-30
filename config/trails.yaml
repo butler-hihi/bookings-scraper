@@ -1,0 +1,9 @@
+trails:
+  - name: otter
+    enabled: true
+    type: sanparks
+    slug: otter
+    display_name: "Otter Trail"
+    endpoint: auto
+    check_interval: 300
+    priority: 1
