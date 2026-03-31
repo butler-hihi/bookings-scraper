@@ -43,7 +43,7 @@ class OtterTrail(BaseTrail):
         return self.config
 
     # Class-level scraper instance to persist Cloudflare clearance
-    _scraper: cloudscraper.CloudScraper | None = None
+    _scraper: Optional[cloudscraper.CloudScraper] = None
 
     def _get_scraper(self) -> cloudscraper.CloudScraper:
         """Get or create a cloudscraper instance with Cloudflare clearance.

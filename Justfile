@@ -1,40 +1,48 @@
 # BookingsScraper Justfile
 # Run just --list to see available recipes
 
+# System Python (use instead of Poetry which has SSL issues on this machine)
+PYTHON := "/usr/bin/python3"
+PYTHONPATH := "src"
+
 # List all Python source files
 list:
     @echo "=== Source Code ==="
-    @find src -name "*.py" -type f
+    @find src -name "*.py" -type f | sort
     @echo ""
     @echo "=== Tests ==="
-    @find tests -name "*.py" -type f
+    @find tests -name "*.py" -type f | sort
 
 # Run tests with pytest
 test:
-    poetry run pytest -v
+    PYTHONPATH={{PYTHONPATH}} {{PYTHON}} -m pytest tests/ -v
 
 # Run tests with coverage
 test-cov:
-    poetry run pytest --cov=src --cov-report=term-missing
+    PYTHONPATH={{PYTHONPATH}} {{PYTHON}} -m pytest --cov=src --cov-report=term-missing tests/
 
-# Run the scraper
+# Run the scraper (single check)
 run:
-    poetry run python -m bookings_scraper.main
+    PYTHONPATH={{PYTHONPATH}} {{PYTHON}} -m bookings_scraper.main --once
+
+# Run the scraper as a service (continuous)
+serve:
+    PYTHONPATH={{PYTHONPATH}} {{PYTHON}} -m bookings_scraper.main --service --interval 300
 
 # Format code and check linting
 lint:
-    poetry run ruff check src/ tests/
-    poetry run ruff format --check src/ tests/
+    {{PYTHON}} -m ruff check src/ tests/
+    {{PYTHON}} -m ruff format --check src/ tests/
 
 # Format code (auto-fix issues)
 fmt:
-    poetry run ruff format src/ tests/
-    poetry run ruff check --fix src/ tests/
+    {{PYTHON}} -m ruff format src/ tests/
+    {{PYTHON}} -m ruff check --fix src/ tests/
 
-# Install dependencies
+# Install dependencies (using system Python)
 install:
-    poetry install
+    {{PYTHON}} -m pip install cloudscraper tenacity pytest pytest-cov sqlalchemy pyyaml python-dotenv requests ruff
 
-# Shell into the virtual environment
+# Shell into Python REPL
 shell:
-    poetry shell
+    {{PYTHON}}

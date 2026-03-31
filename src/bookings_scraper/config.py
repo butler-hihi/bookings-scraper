@@ -51,7 +51,7 @@ def load_trail_configs(config_path: str) -> list[dict]:
     return configs
 
 
-def get_trail_by_slug(slug: str) -> dict | None:
+def get_trail_by_slug(slug: str) -> Optional[dict]:
     """Get trail configuration by slug.
 
     Args:
