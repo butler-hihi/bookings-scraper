@@ -54,7 +54,7 @@ class BaseTrail(ABC):
         """
         pass
 
-    def check_availability(self) -> Optional[dict]:
+    def check_availability(self) -> dict | None:
         """Main check method - calls fetch_availability and returns results.
 
         Returns:

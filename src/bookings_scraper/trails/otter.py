@@ -43,7 +43,7 @@ class OtterTrail(BaseTrail):
         return self.config
 
     # Class-level scraper instance to persist Cloudflare clearance
-    _scraper: Optional[cloudscraper.CloudScraper] = None
+    _scraper: cloudscraper.CloudScraper | None = None
 
     def _get_scraper(self) -> cloudscraper.CloudScraper:
         """Get or create a cloudscraper instance with Cloudflare clearance.
@@ -109,11 +109,9 @@ class OtterTrail(BaseTrail):
                 if len(parts) >= 2:
                     date_str = parts[0]
                     slots = int(parts[1])
-                    availability_records.append({
-                        "date": date_str,
-                        "available": slots > 0,
-                        "metadata": {"slots": slots}
-                    })
+                    availability_records.append(
+                        {"date": date_str, "available": slots > 0, "metadata": {"slots": slots}}
+                    )
 
             logger.info(f"Successfully parsed {len(availability_records)} availability records")
             return availability_records

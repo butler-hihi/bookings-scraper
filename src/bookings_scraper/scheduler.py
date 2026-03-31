@@ -25,7 +25,7 @@ class Scheduler:
         """
         self.trails = trails
         self.running = False
-        self.last_check_time: Optional[datetime] = None
+        self.last_check_time: datetime | None = None
 
         logger.info(f"Scheduler initialized with {len(trails)} trails")
 

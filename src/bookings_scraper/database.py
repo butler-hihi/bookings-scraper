@@ -68,7 +68,7 @@ def save_availability(
     trail_name: str,
     date: str,
     available: bool,
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
     db_path: Path = None,
 ) -> int:
     """Save or update availability record.
@@ -125,9 +125,7 @@ def save_availability(
         session.close()
 
 
-def get_availability(
-    trail_name: str, date: str, db_path: Path = None
-) -> Optional[AvailabilityRecord]:
+def get_availability(trail_name: str, date: str, db_path: Path = None) -> AvailabilityRecord | None:
     """Get availability record for a specific trail and date.
 
     Args:
@@ -158,7 +156,7 @@ def get_availability(
 
 
 def get_all_availability(
-    trail_name: Optional[str] = None, db_path: Path = None
+    trail_name: str | None = None, db_path: Path = None
 ) -> list[AvailabilityRecord]:
     """Get all availability records, optionally filtered by trail.
 
