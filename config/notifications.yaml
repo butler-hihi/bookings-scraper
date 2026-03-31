@@ -1,0 +1,11 @@
+# Notification Configuration
+
+# Default notification recipients (always notified)
+default_numbers:
+  - "+27689145805"
+
+# Allow users to self-subscribe via WhatsApp command
+allow_self_subscribe: true
+
+# Self-subscribe requires password (simple security)
+subscribe_password: "otter2026"

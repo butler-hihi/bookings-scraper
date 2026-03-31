@@ -29,6 +29,23 @@ class AvailabilityRecord(Base):
         return f"AvailabilityRecord(trail={self.trail_name}, date={self.date}, available={self.available})"
 
 
+class Subscriber(Base):
+    """Model for tracking notification subscribers."""
+
+    __tablename__ = "subscribers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    phone_number = Column(String(20), nullable=False, unique=True)
+    name = Column(String(100), nullable=True)
+    subscribed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    active = Column(Boolean, nullable=False, default=True)
+    notify_on_available = Column(Boolean, nullable=False, default=True)
+    notify_on_unavailable = Column(Boolean, nullable=False, default=False)
+
+    def __repr__(self) -> str:
+        return f"Subscriber(phone={self.phone_number}, active={self.active})"
+
+
 def get_db_path() -> Path:
     """Get the database file path.
 
@@ -247,5 +264,159 @@ def get_changes(
             "total_records": len(records),
         }
 
+    finally:
+        session.close()
+
+
+def add_subscriber(
+    phone_number: str,
+    name: Optional[str] = None,
+    db_path: Optional[Path] = None,
+) -> Subscriber:
+    """Add a new subscriber.
+
+    Args:
+        phone_number: Subscriber's phone number (with country code)
+        name: Optional subscriber name
+        db_path: Path to database
+
+    Returns:
+        The created Subscriber object
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        # Check if already exists
+        existing = session.query(Subscriber).filter(Subscriber.phone_number == phone_number).first()
+
+        if existing:
+            existing.active = True
+            if name:
+                existing.name = name
+            session.commit()
+            return existing
+
+        # Create new subscriber
+        subscriber = Subscriber(
+            phone_number=phone_number,
+            name=name,
+            subscribed_at=datetime.utcnow(),
+            active=True,
+        )
+        session.add(subscriber)
+        session.commit()
+
+        # Expose the subscriber object before closing session
+        result = {
+            "id": subscriber.id,
+            "phone_number": subscriber.phone_number,
+            "name": subscriber.name,
+            "active": subscriber.active,
+        }
+
+        session.close()
+
+        # Return a simple dict instead of ORM object to avoid detached instance issues
+        class SubscriberResult:
+            def __init__(self, data):
+                self.id = data["id"]
+                self.phone_number = data["phone_number"]
+                self.name = data["name"]
+                self.active = data["active"]
+
+        return SubscriberResult(result)
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def remove_subscriber(phone_number: str, db_path: Optional[Path] = None) -> bool:
+    """Remove (deactivate) a subscriber.
+
+    Args:
+        phone_number: Subscriber's phone number
+        db_path: Path to database
+
+    Returns:
+        True if subscriber was found and removed, False otherwise
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        subscriber = (
+            session.query(Subscriber).filter(Subscriber.phone_number == phone_number).first()
+        )
+
+        if subscriber:
+            subscriber.active = False
+            session.commit()
+            return True
+        return False
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def get_active_subscribers(db_path: Optional[Path] = None) -> list[Subscriber]:
+    """Get all active subscribers.
+
+    Args:
+        db_path: Path to database
+
+    Returns:
+        List of active Subscriber objects
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        return (
+            session.query(Subscriber)
+            .filter(Subscriber.active.is_(True))
+            .order_by(Subscriber.subscribed_at)
+            .all()
+        )
+    finally:
+        session.close()
+
+
+def get_subscriber_count(db_path: Optional[Path] = None) -> int:
+    """Get count of active subscribers.
+
+    Args:
+        db_path: Path to database
+
+    Returns:
+        Number of active subscribers
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        return session.query(Subscriber).filter(Subscriber.active.is_(True)).count()
     finally:
         session.close()
