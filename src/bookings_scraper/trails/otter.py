@@ -42,6 +42,28 @@ class OtterTrail(BaseTrail):
         """
         return self.config
 
+    # Class-level scraper instance to persist Cloudflare clearance
+    _scraper: Optional[cloudscraper.CloudScraper] = None
+
+    def _get_scraper(self) -> cloudscraper.CloudScraper:
+        """Get or create a cloudscraper instance with Cloudflare clearance.
+
+        Returns:
+            Configured cloudscraper instance with Cloudflare clearance
+        """
+        if self._scraper is None:
+            self._scraper = cloudscraper.create_scraper(
+                browser={
+                    "browser": "chrome",
+                    "platform": "darwin",
+                    "desktop": True,
+                    "mobile": False,
+                }
+            )
+            # First visit the main site to get Cloudflare clearance
+            self._scraper.get("https://www.sanparks.org/", timeout=30)
+        return self._scraper
+
     @retry(
         retry=retry_if_exception_type((json.JSONDecodeError, Exception)),
         stop=stop_after_attempt(5),
@@ -52,7 +74,7 @@ class OtterTrail(BaseTrail):
         Returns:
             Comma-separated availability string from API
         """
-        scraper = cloudscraper.create_scraper()
+        scraper = self._get_scraper()
         time.sleep(1)  # Add delay to avoid rate limiting
 
         response = scraper.get(self.OTTER_API_URL, timeout=30)
